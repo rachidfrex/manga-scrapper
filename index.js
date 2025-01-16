@@ -7,14 +7,21 @@ const app = express();
 app.use(express.static('public'));
 
 app.use(express.json());
-mongoose.connect("mongodb+srv://rachid7518:qg5Y3eDQJG2hbHF@cluster0.ikmiq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-.then(  () => {
-    console.log('Connected to the database');
-}
-).catch( (err) => {
-    console.log(err);
-}
-)
+// mongoose.connect("mongodb+srv://rachid7518:qg5Y3eDQJG2hbHF@cluster0.ikmiq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+// .then(  () => {
+//     console.log('Connected to the database');
+// }
+// ).catch( (err) => {
+//     console.log(err);
+// }
+// )
+mongoose.connect(process.env.MONGODB_URI || "mongodb+srv://rachid7518:qg5Y3eDQJG2hbHF@cluster0.ikmiq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+.then(() => {
+  console.log('Connected to the database');
+})
+.catch((err) => {
+  console.log(err);
+});
 
 // Maintain active connections
 const clients = new Map();
@@ -339,6 +346,10 @@ app.delete('/manga/:slug', async (req, res) => {
     }
 });
 
-app.listen(3000, '192.168.1.34', () => {
-    console.log('Server is running http://192.168.1.34:3000');
+// app.listen(3000, '192.168.1.34', () => {
+//     console.log('Server is running http://192.168.1.34:3000');
+// });
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
