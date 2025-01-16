@@ -23,6 +23,10 @@ app.get('/', (req, res) => {
 }
 );
 
+// Add these constants at the top
+const CHAPTERS_PER_PAGE = 50;
+const CACHE_DURATION = 3600000; // 1 hour in milliseconds
+const chaptersCache = new Map();
 
 // Add to your Express routes
 app.post('/manga/:slug/check-updates', async (req, res) => {
@@ -59,26 +63,88 @@ app.get('/mangas', async (req, res) => {
     }
 });
 
-// get a manga by id and chapters
+// Update the manga route to include pagination
 app.get('/manga/:slug', async (req, res) => {
     try {
-        const manga = await Manga.findBySlug(req.params.slug).populate({
-            path: 'chapters',
-            options: { sort: { 'chapterNumber': -1 } }
-        });
-        
+        const page = parseInt(req.query.page) || 1;
+        const cacheKey = `${req.params.slug}_${page}`;
+
+        // Check cache first
+        if (chaptersCache.has(cacheKey)) {
+            const cached = chaptersCache.get(cacheKey);
+            if (Date.now() - cached.timestamp < CACHE_DURATION) {
+                return res.render('chapters.ejs', cached.data);
+            }
+        }
+
+        const manga = await Manga.findBySlug(req.params.slug);
         if (!manga) {
-            // Try to find similar manga names
             const similarResults = await findSimilarManga(req.params.slug.replace(/-/g, ' '));
             return res.render('notFound.ejs', { 
                 searchTerm: req.params.slug.replace(/-/g, ' '),
-                similarResults: similarResults.slice(0, 5) // Show top 5 similar results
+                similarResults: similarResults.slice(0, 5)
             });
         }
-        res.render('chapters.ejs', { manga });
+
+        // Get total chapters count
+        const totalChapters = await Chapter.countDocuments({ mangaId: manga._id });
+        const totalPages = Math.ceil(totalChapters / CHAPTERS_PER_PAGE);
+
+        // Get paginated chapters
+        const chapters = await Chapter.find({ mangaId: manga._id })
+            .sort({ chapterNumber: -1 })
+            .skip((page - 1) * CHAPTERS_PER_PAGE)
+            .limit(CHAPTERS_PER_PAGE)
+            .select('chapterNumber title creationDate _id');
+
+        const data = { 
+            manga: { ...manga.toObject(), chapters },
+            currentPage: page,
+            totalPages,
+            totalChapters
+        };
+
+        // Cache the result
+        chaptersCache.set(cacheKey, {
+            data,
+            timestamp: Date.now()
+        });
+
+        res.render('chapters.ejs', data);
     } catch (error) {
         console.error(error);
         res.status(500).send('Server error');
+    }
+});
+
+// Update API endpoint for lazy loading chapters
+app.get('/api/manga/:slug/chapters', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const manga = await Manga.findBySlug(req.params.slug);
+        
+        if (!manga) {
+            return res.status(404).json({ message: 'Manga not found' });
+        }
+
+        // Get total count for pagination
+        const totalChapters = await Chapter.countDocuments({ mangaId: manga._id });
+        const totalPages = Math.ceil(totalChapters / CHAPTERS_PER_PAGE);
+
+        const chapters = await Chapter.find({ mangaId: manga._id })
+            .sort({ chapterNumber: -1 })
+            .skip((page - 1) * CHAPTERS_PER_PAGE)
+            .limit(CHAPTERS_PER_PAGE)
+            .select('chapterNumber title creationDate _id');
+
+        res.json({ 
+            chapters,
+            currentPage: page,
+            totalPages,
+            hasMore: page < totalPages
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
     }
 });
 

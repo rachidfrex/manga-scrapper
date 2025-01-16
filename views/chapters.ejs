@@ -88,6 +88,120 @@
             });
         }
     </script>
+    <script>
+// Utility functions at the top
+function formatDate(date) {
+    const d = new Date(date);
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+}
+
+// Remove duplicate isLoading declaration and merge the loading logic
+let isLoading = false;
+let currentPage = <%= typeof currentPage !== 'undefined' ? currentPage : 1 %>;
+let hasMoreChapters = <%= typeof totalPages !== 'undefined' && currentPage < totalPages %>;
+
+async function loadMoreChapters() {
+    if (isLoading || !hasMoreChapters) return;
+    
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const loadMoreButton = document.getElementById('load-more');
+    
+    try {
+        isLoading = true;
+        loadingIndicator?.classList.remove('hidden');
+        loadMoreButton?.classList.add('opacity-50', 'cursor-not-allowed');
+
+        const response = await fetch(`/api/manga/<%= manga.slug %>/chapters?page=${currentPage + 1}`);
+        if (!response.ok) throw new Error('Failed to load chapters');
+        
+        const data = await response.json();
+        
+        if (data.chapters && data.chapters.length > 0) {
+            const chaptersGrid = document.getElementById('chapters-grid');
+            data.chapters.forEach(chapter => {
+                const card = createChapterCard(chapter);
+                chaptersGrid.appendChild(card);
+            });
+
+            currentPage = data.currentPage;
+            hasMoreChapters = data.hasMore;
+
+            if (!hasMoreChapters) {
+                loadMoreButton?.classList.add('hidden');
+            }
+        } else {
+            hasMoreChapters = false;
+            loadMoreButton?.classList.add('hidden');
+        }
+    } catch (error) {
+        console.error('Error loading chapters:', error);
+    } finally {
+        isLoading = false;
+        loadingIndicator?.classList.remove('hidden');
+        loadMoreButton?.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+function createChapterCard(chapter) {
+    const template = document.createElement('template');
+    const formattedDate = formatDate(new Date(chapter.creationDate));
+    
+    template.innerHTML = `
+        <a href="/manga/<%= manga.slug %>/chapter/${chapter._id}" 
+           class="chapter-card bg-slate-800 rounded-lg p-4 hover:bg-slate-700 
+                  transition-colors group relative overflow-hidden"
+           data-chapter-number="${chapter.chapterNumber}">
+            <div class="relative z-10">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-white font-semibold">
+                            الفصل ${chapter.chapterNumber}
+                        </h3>
+                        ${chapter.title ? `<p class="text-slate-400 text-sm">${chapter.title}</p>` : ''}
+                    </div>
+                    <div class="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center group-hover:bg-slate-600">
+                        <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-slate-400">
+                    ${formattedDate}
+                </div>
+            </div>
+        </a>
+    `;
+    return template.content.firstElementChild;
+}
+
+// Remove duplicate script and merge the observer setup
+document.addEventListener('DOMContentLoaded', () => {
+    const observer = new IntersectionObserver((entries) => {
+        const target = entries[0];
+        if (target.isIntersecting && !isLoading && hasMoreChapters) {
+            loadMoreChapters();
+        }
+    }, {
+        root: null,
+        rootMargin: '100px',
+        threshold: 0.1
+    });
+
+    const trigger = document.getElementById('load-more-trigger');
+    if (trigger) observer.observe(trigger);
+
+    // Also allow manual loading
+    const loadMoreButton = document.getElementById('load-more');
+    if (loadMoreButton) {
+        loadMoreButton.addEventListener('click', loadMoreChapters);
+    }
+});
+
+// ...rest of existing code (sorting, searching, etc.)...
+</script>
 </head>
 <body class="bg-slate-900 relative">
     <!-- Add Home Button -->
@@ -298,6 +412,26 @@
                 <p class="text-slate-400">لم يتم إضافة أي فصول لهذه المانجا بعد</p>
             </div>
         <% } %>
+        <div class="mt-8 text-center">
+    <div id="loading-indicator" class="hidden">
+        <div class="inline-flex items-center gap-2 text-slate-400">
+            <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            جاري تحميل المزيد...
+        </div>
+    </div>
+    <div id="load-more-trigger" class="h-4"></div>
+    <button id="load-more" 
+            class="mt-4 px-4 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors">
+        تحميل المزيد
+    </button>
+</div>
+
+        <p class="text-sm text-slate-500 mt-2">
+            <%= totalChapters %> فصل
+        </p>
     </div>
 
     <script>
