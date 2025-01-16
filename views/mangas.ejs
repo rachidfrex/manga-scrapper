@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manga Collection</title>
+    <link href="/css/output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            direction: rtl;
+        }
+    </style>
+
+    <% 
+    const state= {
+        // arabic translation for the status badge
+        Ongoing: {
+            text: 'مستمرة',
+            textColor: 'text-green-500',
+            color: 'bg-green-500 '
+        },
+        Completed: {
+            text: 'مكتملة',
+            textColor: 'text-yellow-500',
+            color: 'bg-yellow-200'
+        },
+        Dropped : {
+            text: 'مهجورة',
+            textColor: 'text-red-500',
+            color: 'bg-red-200'
+        }
+
+    }
+     %>
+</head>
+<body class="bg-slate-900">
+    <!-- Decorative Header Background -->
+    <div class="absolute top-0 left-0 w-full h-64 bg-gradient-to-r from-slate-900 to-slate-950 -skew-y-6 transform origin-top-left -z-10"></div>
+
+    <div class="container mx-auto px-4 py-12">
+        <!-- Header Section -->
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-white font-cairo">استكشف المانجا</h1>
+            <div class="flex items-center gap-4">
+                <a href="/add-manga" 
+                   class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg 
+                          hover:bg-blue-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span>إضافة مانجا</span>
+                </a>
+                <div class="relative">
+                    <input type="search" 
+                           placeholder="ابحث عن مانجا..." 
+                           class="w-64 pl-10 pr-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-slate-600">
+                    <svg class="w-5 h-5 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add this after the header section -->
+        <% if (message && message.includes('deleted')) { %>
+            <div id="deleteNotification" 
+                 class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-900/50 border border-green-500 
+                        rounded-lg px-6 py-3 text-green-300 flex items-center gap-3 z-50">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M5 13l4 4L19 7"/>
+                </svg>
+                <span><%= message %></span>
+            </div>
+
+            <script>
+                setTimeout(() => {
+                    const notification = document.getElementById('deleteNotification');
+                    if (notification) {
+                        notification.style.opacity = '0';
+                        setTimeout(() => notification.remove(), 300);
+                    }
+                }, 3000);
+            </script>
+        <% } %>
+
+        <!-- Manga Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            <% mangas.forEach(manga => { %>
+                <a href="/manga/<%= manga.slug %>" class="group">
+                    <div class="bg-slate-800 rounded-lg overflow-hidden transition-transform duration-300 hover:-translate-y-1">
+                        <div class="relative aspect-[3/4]">
+                            <img src="<%= manga.poster %>" 
+                                 alt="<%= manga.title %>"
+                                 class="w-full h-full object-cover">
+                            
+                            <!-- Status Badge - moved to right for RTL -->
+                           <!-- State Badge -->
+                        <span class="absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-md
+                           <%= manga.state.toLowerCase() === 'ongoing' ? state.Ongoing.color : 
+                              manga.state.toLowerCase() === 'completed' ? state.Completed.color :
+                              manga.state.toLowerCase() === 'dropped' ? state.Dropped.color : '' %>
+                           text-white backdrop-blur-sm font-cairo">
+                           <%= 
+                                manga.state.toLowerCase() === 'ongoing' ? state.Ongoing.text :
+                                manga.state.toLowerCase() === 'completed' ? state.Completed.text :
+                                manga.state.toLowerCase() === 'dropped' ? state.Dropped.text : ''
+                            %>
+                        </span>
+                        </div>
+                        
+                        <div class="p-2 space-y-1">
+                            <h2 class="text-sm font-bold w-full text-left text-slate-200 line-clamp-1 font-cairo">
+                                <%= manga.title %>
+                            </h2>
+                            
+                            <div class="flex flex-wrap gap-1 justify-end">
+                                <% manga.genres.slice(0, 2).forEach(genre => { %>
+                                    <span class="px-2 py-0.5 text-[10px] rounded bg-slate-700 text-slate-300 font-cairo">
+                                        <%= genre %>
+                                    </span>
+                                <% }) %>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            <% }) %>
+        </div>
+
+        <!-- Empty State -->
+        <% if (!mangas || mangas.length === 0) { %>
+            <div class="flex flex-col items-center justify-center py-20">
+                <div class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                    <svg class="w-10 h-10 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                </div>
+                <h2 class="text-xl font-semibold text-white mb-2">No Manga Found</h2>
+                <p class="text-slate-400">Your collection is empty</p>
+            </div>
+        <% } %>
+    </div>
+</body>
+</html>

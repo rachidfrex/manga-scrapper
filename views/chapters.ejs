@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= manga.title %> - Chapters</title>
+    <link href="/css/output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+        }
+        /* Add skeleton loading animation */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .skeleton {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+    </style>
+    <%
+    const state = {
+        Ongoing: {
+            text: 'مستمرة',
+            textColor: 'text-green-500',
+            color: 'bg-green-500'
+        },
+        Completed: {
+            text: 'مكتملة',
+            textColor: 'text-yellow-500',
+            color: 'bg-yellow-200'
+        },
+        Dropped: {
+            text: 'مهجورة',
+            textColor: 'text-red-500',
+            color: 'bg-red-200'
+        }
+    };
+
+    function formatDate(date) {
+        const d = new Date(date);
+        const day = d.getDate().toString().padStart(2, '0');
+        const month = (d.getMonth() + 1).toString().padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+    %>
+    <script>
+        let isAscending = false;
+
+        function toggleSort() {
+            isAscending = !isAscending;
+            const chaptersContainer = document.getElementById('chapters-grid');
+            const chapters = Array.from(chaptersContainer.children);
+            
+            chapters.sort((a, b) => {
+                const aNum = parseInt(a.getAttribute('data-chapter-number'));
+                const bNum = parseInt(b.getAttribute('data-chapter-number'));
+                return isAscending ? aNum - bNum : bNum - aNum;
+            });
+            
+            chapters.forEach(chapter => chaptersContainer.appendChild(chapter));
+            
+            // Update sort button text
+            document.getElementById('sort-icon').style.transform = 
+                isAscending ? 'rotate(180deg)' : 'rotate(0deg)';
+            document.getElementById('sort-text').textContent = 
+                isAscending ? 'تصاعدي' : 'تنازلي';
+        }
+
+        function searchChapters() {
+            const searchInput = document.getElementById('chapterSearch');
+            const searchTerm = searchInput.value.toLowerCase();
+            const chapterCards = document.querySelectorAll('.chapter-card');
+            
+            chapterCards.forEach(card => {
+                const chapterNumber = card.getAttribute('data-chapter-number');
+                const chapterTitle = card.getAttribute('data-chapter-title')?.toLowerCase() || '';
+                
+                if (chapterNumber.includes(searchTerm) || chapterTitle.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</head>
+<body class="bg-slate-900">
+    <!-- Hero Section with Manga Details -->
+    <div class="relative min-h-[60vh] bg-slate-950">
+        <!-- Background Image with Overlay -->
+        <div class="absolute inset-0 z-0">
+            <img src="<%= manga.poster %>" alt="" class="w-full h-full object-cover opacity-20">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
+        </div>
+
+        <!-- Content -->
+        <div class="container mx-auto px-4 relative z-10 pt-20">
+            <div class="flex flex-col md:flex-row gap-8 items-start">
+                <!-- Manga Poster -->
+                <div class="w-48 flex-shrink-0">
+                    <img src="<%= manga.poster %>" alt="<%= manga.title %>" 
+                         class="w-full rounded-lg shadow-2xl">
+                </div>
+
+                <!-- Manga Details -->
+                <div class="flex-grow text-white">
+                    <h1 class="text-4xl font-bold mb-4"><%= manga.title %></h1>
+                    <div class="flex gap-2 mb-4">
+                        <% manga.genres.forEach(genre => { %>
+                            <span class="px-3 py-1 bg-slate-800 rounded-full text-sm">
+                                <%= genre %>
+                            </span>
+                        <% }) %>
+                    </div>
+                    <p class="text-slate-300 mb-6"><%= manga.description %></p>
+                    <div class="flex items-center gap-4">
+                        <span class="px-4 py-2 bg-slate-800 rounded-lg">
+                            <span class="block text-sm text-slate-400">الحالة</span>
+                            <span class="font-semibold <%= state[manga.state]?.textColor || 'text-white' %>">
+                                <%= 
+                                manga.state.toLowerCase() === 'ongoing' ? state.Ongoing.text :
+                                manga.state.toLowerCase() === 'completed' ? state.Completed.text :
+                                manga.state.toLowerCase() === 'dropped' ? state.Dropped.text : ''
+                                 %>
+                            </span>
+                        </span>
+                        <span class="px-4 py-2 bg-slate-800 rounded-lg">
+                            <span class="block text-sm text-slate-400">عدد الفصول</span>
+                            <span class="font-semibold"><%= manga.chapters.length %></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this after the manga details section, before chapters list -->
+    <div class="container mx-auto px-4 relative z-10">
+        <!-- ...existing manga details... -->
+        
+        <!-- Add Delete Button -->
+        <div class="mt-6 flex justify-end">
+            <button onclick="confirmDelete()"
+                    class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg 
+                        hover:bg-red-700 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                <span>حذف المانجا</span>
+            </button>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="deleteModal" 
+            class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm hidden items-center justify-center z-50">
+            <div class="bg-slate-800 rounded-lg p-6 max-w-md w-full mx-4">
+                <h3 class="text-xl font-bold text-white mb-4">تأكيد الحذف</h3>
+                <p class="text-slate-300 mb-6">
+                    هل أنت متأكد من حذف مانجا "<%= manga.title %>"؟
+                    سيتم حذف جميع الفصول المرتبطة بها.
+                </p>
+                <div class="flex justify-end gap-4">
+                    <button onclick="hideDeleteModal()"
+                            class="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors">
+                        إلغاء
+                    </button>
+                    <button onclick="deleteManga()"
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                        حذف
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chapters List -->
+    <div class="container mx-auto px-4 py-12">
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-4">
+                <h2 class="text-2xl font-bold text-white">قائمة الفصول</h2>
+                <!-- Sort Button -->
+                <button onclick="toggleSort()" 
+                        class="flex items-center gap-2 px-3 py-1.5 bg-slate-800 rounded-lg 
+                            text-slate-300 hover:bg-slate-700 transition-colors">
+                    <svg id="sort-icon" class="w-4 h-4 transition-transform duration-300" 
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                    </svg>
+                    <span id="sort-text">تنازلي</span>
+                </button>
+            </div>
+            <!-- Search Input -->
+            <div class="relative w-64">
+                <input type="search" 
+                    id="chapterSearch"
+                    placeholder="ابحث عن رقم الفصل..." 
+                    onkeyup="searchChapters()"
+                    class="w-full pl-10 pr-4 py-2 rounded-lg bg-slate-800 border border-slate-700 
+                            text-slate-200 focus:outline-none focus:border-slate-600 focus:ring-1 
+                            focus:ring-slate-600 transition-colors">
+                <svg class="w-5 h-5 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+            </div>
+        </div>
+        
+        <div id="chapters-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <% manga.chapters.sort((a, b) => b.chapterNumber - a.chapterNumber).forEach(chapter => { %>
+                <a href="/manga/<%= manga.slug %>/chapter/<%= chapter._id %>" 
+                    class="chapter-card bg-slate-800 rounded-lg p-4 hover:bg-slate-700 
+                            transition-colors group relative overflow-hidden"
+                    data-chapter-number="<%= chapter.chapterNumber %>"
+                    data-chapter-title="<%= chapter.title || '' %>">
+                    <!-- Loading Skeleton -->
+                    <div class="skeleton absolute inset-0 opacity-0 transition-opacity duration-300"
+                        data-loading="true">
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-white font-semibold">
+                                    الفصل <%= chapter.chapterNumber %>
+                                </h3>
+                                <% if (chapter.title) { %>
+                                    <p class="text-slate-400 text-sm"><%= chapter.title %></p>
+                                <% } %>
+                            </div>
+                            <div class="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center group-hover:bg-slate-600">
+                                <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-xs text-slate-400">
+                            <%= formatDate(chapter.creationDate) %>
+                        </div>
+                    </div>
+                </a>
+            <% }) %>
+        </div>
+
+        <!-- No Results Message -->
+        <div id="noResults" class="hidden text-center py-12">
+            <div class="w-16 h-16 bg-slate-800 rounded-full mx-auto flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h3 class="text-white text-xl font-semibold mb-2">لم يتم العثور على نتائج</h3>
+            <p class="text-slate-400">جرب البحث عن رقم فصل آخر</p>
+        </div>
+
+        <!-- Empty State for No Chapters -->
+        <% if (!manga.chapters || manga.chapters.length === 0) { %>
+            <div class="text-center py-12">
+                <div class="w-16 h-16 bg-slate-800 rounded-full mx-auto flex items-center justify-center mb-4">
+                    <svg class="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                </div>
+                <h3 class="text-white text-xl font-semibold mb-2">لا توجد فصول</h3>
+                <p class="text-slate-400">لم يتم إضافة أي فصول لهذه المانجا بعد</p>
+            </div>
+        <% } %>
+    </div>
+
+    <script>
+        // Add loading animation when navigating to chapters
+        document.querySelectorAll('.chapter-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                const skeleton = card.querySelector('[data-loading="true"]');
+                skeleton.style.opacity = '1';
+            });
+        });
+
+        // Handle chapter card hover effects
+        document.querySelectorAll('.chapter-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.querySelector('.group-hover\\:bg-slate-600').classList.add('bg-slate-600');
+            });
+            card.addEventListener('mouseleave', () => {
+                card.querySelector('.group-hover\\:bg-slate-600').classList.remove('bg-slate-600');
+            });
+        });
+
+        function confirmDelete() {
+            document.getElementById('deleteModal').style.display = 'flex';
+        }
+
+        function hideDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+        }
+
+        async function deleteManga() {
+            try {
+                const response = await fetch('/manga/<%= manga.slug %>', {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Redirect to manga list on success
+                    window.location.href = '/mangas';
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                alert(error.message || 'حدث خطأ أثناء حذف المانجا');
+                hideDeleteModal();
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('deleteModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                hideDeleteModal();
+            }
+        });
+    </script>
+</body>
+</html>

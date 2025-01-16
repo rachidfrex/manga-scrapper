@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= manga.title %> - الفصل <%= chapter.chapterNumber %></title>
+    <link href="/css/output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+        .page-viewer { scroll-behavior: smooth; }
+        .header-hide {
+            transform: translateY(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .header-show {
+            transform: translateY(0);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        /* Loading animation styles */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .skeleton {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        .page-loading {
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .page-loaded {
+            opacity: 1;
+        }
+    </style>
+    <script>
+        function searchPages() {
+            const searchInput = document.getElementById('pageSearch');
+            const pageNumber = parseInt(searchInput.value);
+            if (!isNaN(pageNumber)) {
+                const pageElement = document.querySelector(`[data-page="${pageNumber}"]`);
+                if (pageElement) {
+                    pageElement.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        }
+
+        // Add scroll behavior for header
+        document.addEventListener('DOMContentLoaded', function() {
+            const header = document.getElementById('manga-header');
+            let lastScroll = 0;
+            
+            window.addEventListener('scroll', () => {
+                const currentScroll = window.pageYOffset;
+                
+                if (currentScroll <= 0) {
+                    header.classList.remove('header-hide');
+                    header.classList.add('header-show');
+                    return;
+                }
+                
+                if (currentScroll > lastScroll && !header.classList.contains('header-hide')) {
+                    // Scrolling down & header is visible
+                    header.classList.remove('header-show');
+                    header.classList.add('header-hide');
+                } else if (currentScroll < lastScroll && header.classList.contains('header-hide')) {
+                    // Scrolling up & header is hidden
+                    header.classList.remove('header-hide');
+                    header.classList.add('header-show');
+                }
+                
+                lastScroll = currentScroll;
+            });
+
+            // Lazy loading implementation
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const container = entry.target;
+                        const img = container.querySelector('img[data-src]');
+                        if (img) {
+                            img.src = img.dataset.src;
+                            img.removeAttribute('data-src');
+                            
+                            img.onload = function() {
+                                container.querySelector('.skeleton').classList.add('opacity-0');
+                                container.querySelector('.page-content').classList.add('page-loaded');
+                                updateProgress();
+                            };
+                            
+                            observer.unobserve(container);
+                        }
+                    }
+                });
+            }, {
+                rootMargin: '50% 0px', // Start loading when image is 50% viewport away
+                threshold: 0
+            });
+
+            let loadedPages = 0;
+            const pages = document.querySelectorAll('.manga-page');
+            const totalPages = pages.length;
+
+            function updateProgress() {
+                loadedPages++;
+                const progress = (loadedPages / totalPages) * 100;
+                document.getElementById('loading-progress').style.width = `${progress}%`;
+                if (loadedPages === totalPages) {
+                    document.getElementById('loading-bar').classList.add('opacity-0');
+                }
+            }
+
+            // Observe each page container
+            pages.forEach(page => {
+                imageObserver.observe(page);
+            });
+        });
+    </script>
+</head>
+<body class="bg-slate-900">
+    <!-- Loading Progress Bar -->
+    <div id="loading-bar" class="fixed top-0 left-0 right-0 h-1 bg-slate-800 z-50 transition-opacity duration-300">
+        <div id="loading-progress" class="h-full bg-blue-500 transition-all duration-300 ease-out w-0"></div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header id="manga-header" class="fixed top-0 left-0 right-0 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 z-50 header-show">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <!-- Chapter Info -->
+                <div class="flex items-center gap-4">
+                    <a href="/manga/<%= manga.slug %>" class="text-slate-400 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                    </a>
+                    <div>
+                        <h1 class="text-white font-semibold"><%= manga.title %></h1>
+                        <p class="text-sm text-slate-400">الفصل <%= chapter.chapterNumber %></p>
+                    </div>
+                </div>
+
+                <!-- Page Navigation -->
+                <div class="flex items-center gap-4">
+                    <!-- Page Search -->
+                    <div class="relative">
+                        <input type="number" 
+                               id="pageSearch"
+                               placeholder="رقم الصفحة..." 
+                               min="1"
+                               max="<%= chapter.pages.length %>"
+                               class="w-24 pl-3 pr-3 py-1 rounded-lg bg-slate-800 border border-slate-700 
+                                      text-slate-200 focus:outline-none focus:border-slate-600"
+                               onkeyup="if(event.key === 'Enter') searchPages()">
+                    </div>
+
+                    <!-- Chapter Navigation -->
+                    <div class="flex items-center gap-2">
+                        <% if (prevChapter) { %>
+                            <a href="/manga/<%= manga.slug %>/chapter/<%= prevChapter._id %>" 
+                               class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">
+                                السابق
+                            </a>
+                        <% } %>
+                        <% if (nextChapter) { %>
+                            <a href="/manga/<%= manga.slug %>/chapter/<%= nextChapter._id %>" 
+                               class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">
+                                التالي
+                            </a>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Pages Container -->
+    <div class="page-viewer container mx-auto px-4 pt-20 pb-8">
+        <div class="max-w-3xl mx-auto space-y-4">
+            <% chapter.pages.forEach((page, index) => { %>
+                <div class="manga-page relative" data-page="<%= page.pageNumber %>">
+                    <!-- Skeleton Loading -->
+                    <div class="skeleton absolute inset-0 rounded-lg" style="padding-top: 141.4%"></div>
+                    
+                    <!-- Page Content -->
+                    <div class="page-content page-loading relative">
+                        <img data-src="<%= page.imageUrl %>" 
+                             alt="Page <%= page.pageNumber %>"
+                             class="w-full rounded-lg shadow-xl"
+                             src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 4'%3E%3C/svg%3E">
+                        <div class="absolute top-2 right-2 px-2 py-1 bg-slate-900/75 backdrop-blur-sm rounded-md text-xs text-white">
+                            <%= page.pageNumber %>/<%= chapter.pages.length %>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+
+        <!-- End of Chapter -->
+        <div class="mt-8 text-center">
+            <% if (nextChapter) { %>
+                <a href="/manga/<%= manga.slug %>/chapter/<%= nextChapter._id %>" 
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-white transition-colors">
+                    الفصل التالي
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            <% } else { %>
+                <p class="text-slate-400">نهاية الفصول المتاحة</p>
+            <% } %>
+        </div>
+    </div>
+</body>
+</html>

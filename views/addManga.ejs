@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة مانجا جديدة</title>
+    <link href="/css/output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+    </style>
+    <style>
+        @property --progress-value {
+            syntax: '<number>';
+            initial-value: 0;
+            inherits: false;
+        }
+        .progress-ring-circle {
+            stroke-dasharray: 400;
+            transition: stroke-dashoffset 0.5s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+    </style>
+</head>
+<body class="bg-slate-900">
+    <div class="min-h-screen py-12">
+        <div class="container mx-auto px-4">
+            <!-- Header -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-white mb-2">إضافة مانجا جديدة</h1>
+                <p class="text-slate-400">أدخل اسم المانجا كما هو في موقع المصدر</p>
+            </div>
+
+            <!-- Add Manga Form -->
+            <div class="max-w-2xl">
+                <form id="addMangaForm" class="bg-slate-800 rounded-lg p-6 space-y-6">
+                    <div>
+                        <label for="mangaName" class="block text-sm font-medium text-slate-300 mb-2">
+                            اسم المانجا
+                        </label>
+                        <input type="text" 
+                               id="mangaName" 
+                               name="mangaName"
+                               class="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg 
+                                      text-white focus:outline-none focus:border-blue-500"
+                               placeholder="مثال: one-piece">
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <button type="submit"
+                                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 
+                                       transition-colors flex items-center gap-2">
+                            <span>إضافة المانجا</span>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                      d="M12 4v16m8-8H4"/>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="hidden mt-8">
+                    <div class="flex flex-col items-center justify-center p-8 bg-slate-800 rounded-lg">
+                        <!-- Progress Ring -->
+                        <div class="relative mb-4">
+                            <svg class="w-32 h-32">
+                                <circle class="text-slate-700" stroke-width="8" stroke="currentColor" fill="transparent" r="58" cx="64" cy="64"/>
+                                <circle id="progress-ring" class="progress-ring-circle text-blue-500" 
+                                        stroke-width="8" stroke="currentColor" fill="transparent" r="58" cx="64" cy="64"/>
+                            </svg>
+                            <span id="progress-text" class="absolute inset-0 flex items-center justify-center text-2xl text-white">0%</span>
+                        </div>
+                        
+                        <!-- Status Text -->
+                        <h3 id="status-title" class="text-xl font-semibold text-white mb-2">جاري تحضير المانجا</h3>
+                        <p id="status-message" class="text-slate-400 text-center mb-4"></p>
+                        
+                        <!-- Chapter Progress -->
+                        <div class="w-full max-w-md bg-slate-700 rounded-full h-2.5 mb-2">
+                            <div id="chapter-progress" class="bg-blue-500 h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <p id="chapter-count" class="text-sm text-slate-400 mb-6"></p>
+                        
+                        <!-- Progress Steps -->
+                        <div class="w-full max-w-md space-y-3">
+                            <div id="step-manga" class="flex items-center gap-3 text-slate-400">
+                                <div class="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center">
+                                    <div class="w-2 h-2 rounded-full bg-current opacity-0 transition-opacity"></div>
+                                </div>
+                                <span>جلب معلومات المانجا</span>
+                            </div>
+                            <div id="step-chapters" class="flex items-center gap-3 text-slate-400">
+                                <div class="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center">
+                                    <div class="w-2 h-2 rounded-full bg-current opacity-0 transition-opacity"></div>
+                                </div>
+                                <span>تحميل الفصول</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Success Message -->
+                <div id="successMessage" class="hidden mt-8 p-4 bg-green-900/50 border border-green-500 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <div>
+                            <p class="text-green-300">تم إضافة المانجا بنجاح!</p>
+                            <a href="" id="viewMangaLink" class="text-green-400 hover:text-green-300 text-sm">اضغط هنا للانتقال إلى صفحة المانجا</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorMessage" class="hidden mt-8 p-4 bg-red-900/50 border border-red-500 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p class="text-red-300">حدث خطأ أثناء إضافة المانجا</p>
+                    </div>
+                    <div id="searchResults" class="hidden mt-8">
+                        <h3 class="text-xl font-semibold text-white mb-4">نتائج البحث المشابهة</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="searchResultsGrid">
+                            <!-- Results will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateProgress(data) {
+            const { progress, message, status, currentChapter, totalChapters } = data;
+            
+            // Update progress ring
+            const ring = document.getElementById('progress-ring');
+            const circumference = 2 * Math.PI * 58;
+            const offset = circumference - (progress / 100) * circumference;
+            ring.style.strokeDasharray = `${circumference} ${circumference}`;
+            ring.style.strokeDashoffset = offset;
+            
+            // Update text elements
+            document.getElementById('progress-text').textContent = `${Math.round(progress)}%`;
+            document.getElementById('status-message').textContent = message;
+            
+            // Update chapter progress if available
+            if (currentChapter && totalChapters) {
+                document.getElementById('chapter-progress').style.width = `${(currentChapter / totalChapters) * 100}%`;
+                document.getElementById('chapter-count').textContent = 
+                    `جاري معالجة الفصل ${currentChapter} من ${totalChapters}`;
+            }
+
+            // Update step indicators
+            const mangaStep = document.getElementById('step-manga');
+            const chaptersStep = document.getElementById('step-chapters');
+            
+            switch(status) {
+                case 'started':
+                    mangaStep.classList.add('text-blue-500');
+                    mangaStep.querySelector('div > div').classList.add('opacity-100');
+                    break;
+                case 'manga_info':
+                    mangaStep.classList.add('text-green-500');
+                    mangaStep.querySelector('div > div').classList.add('opacity-100');
+                    chaptersStep.classList.add('text-blue-500');
+                    break;
+                case 'chapter_progress':
+                    mangaStep.classList.add('text-green-500');
+                    chaptersStep.classList.add('text-blue-500');
+                    chaptersStep.querySelector('div > div').classList.add('opacity-100');
+                    break;
+                case 'completed':
+                    mangaStep.classList.add('text-green-500');
+                    chaptersStep.classList.add('text-green-500');
+                    chaptersStep.querySelector('div > div').classList.add('opacity-100');
+                    break;
+            }
+        }
+
+        // Add this function at the top
+        function createSearchResultCard(manga) {
+            return `
+                <div class="bg-slate-800 rounded-lg p-4 flex gap-4">
+                    <img src="${manga.poster}" alt="${manga.title}" class="w-24 h-32 object-cover rounded">
+                    <div class="flex-1">
+                        <h4 class="text-white font-semibold mb-2">${manga.title}</h4>
+                        <div class="text-sm text-slate-400 mb-2">
+                            <span class="bg-slate-700 px-2 py-0.5 rounded">${manga.state || 'غير معروف'}</span>
+                            ${manga.rating ? `<span class="mr-2">⭐ ${manga.rating}</span>` : ''}
+                        </div>
+                        <div class="flex flex-wrap gap-1 mb-2">
+                            ${(manga.genres || []).map(genre => 
+                                `<span class="text-xs bg-slate-700 px-2 py-0.5 rounded text-slate-300">${genre}</span>`
+                            ).join('')}
+                        </div>
+                        <button onclick="tryScrapeManga('${manga.title}')" 
+                                class="text-sm bg-blue-600 px-3 py-1 rounded hover:bg-blue-700 text-white">
+                            محاولة إضافة هذه المانجا
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Update the form submission handler
+        document.getElementById('addMangaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const form = e.target;
+            const mangaName = form.mangaName.value.trim();
+            
+            if (!mangaName) return;
+
+            // Reset UI state
+            form.style.opacity = '0.5';
+            form.querySelector('button').disabled = true;
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('successMessage').classList.add('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+            document.getElementById('searchResults').classList.add('hidden');
+
+            const eventSource = new EventSource(`/scrape-progress/${mangaName}`);
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                updateProgress(data);
+            };
+
+            try {
+                const response = await fetch('/add-manga', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mangaName })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('successMessage').classList.remove('hidden');
+                    document.getElementById('viewMangaLink').href = `/manga/${data.manga.slug}`;
+                    form.reset();
+                } else {
+                    document.getElementById('errorMessage').classList.remove('hidden');
+                    document.getElementById('errorMessage').querySelector('p').textContent = data.message;
+                    
+                    // Show search results if available
+                    if (data.searchResults && data.searchResults.length > 0) {
+                        const resultsHtml = data.searchResults.map(createSearchResultCard).join('');
+                        document.getElementById('searchResultsGrid').innerHTML = resultsHtml;
+                        document.getElementById('searchResults').classList.remove('hidden');
+                    }
+                }
+            } catch (error) {
+                document.getElementById('errorMessage').classList.remove('hidden');
+                document.getElementById('errorMessage').querySelector('p').textContent = 
+                    error.message || 'حدث خطأ أثناء إضافة المانجا';
+            } finally {
+                eventSource.close();
+                form.style.opacity = '1';
+                form.querySelector('button').disabled = false;
+                document.getElementById('loadingState').classList.add('hidden');
+            }
+        });
+
+        // Add function to try scraping again
+        async function tryScrapeManga(mangaName) {
+            document.getElementById('mangaName').value = mangaName;
+            document.getElementById('addMangaForm').dispatchEvent(new Event('submit'));
+        }
+    </script>
+</body>
+</html>

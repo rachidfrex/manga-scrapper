@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="/css/output.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+
+    <h1 class=" text-2xl font-bold text-center my-4">create your article</h1>
+    <form class="max-w-md mx-auto p-4" action="/articles" method="POST">
+        <input class="w-full p-2 border rounded mb-2" type="text" name="title" placeholder="Article Title">
+        <input class="w-full p-2 border rounded mb-2" type="text" name="body" placeholder="Article Content">
+        <button class="bg-blue-500 w-full text-white px-4 py-2 rounded" type="submit">Submit</button>
+    </form>
+
+
+
+  <div class="max-w-md mx-auto p-4">
+    <h2 class="text-xl font-bold text-start my-4 ">Created Articls</h2>
+    <% articles.forEach((article) => {
+     
+        %>
+        <div class=" relative border p-3 my-2 rounded-md bg-white">
+        <h1 class="text-xl font-bold">
+            <%= article.title %>
+        </h1>
+        <span class="absolute right-2 top-2">
+        
+        <form action="/articles/<%= article._id %>?_method=DELETE" method="POST">
+            <button class="hover:bg-red-100 rounded-full"  type="submit">
+                <svg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'><rect width='20' height='20' stroke='none' fill='#000000' opacity='0'/>
+                <g transform="matrix(0.42 0 0 0.42 12 12)" >
+                <g >
+                <g transform="matrix(0.71 0.71 -0.71 0.71 0 0)" >
+                <path style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(244,67,54); fill-rule: nonzero; opacity: 1;" transform=" translate(-24, -24)" d="M 21.5 4.5 L 26.501 4.5 L 26.501 43.5 L 21.5 43.5 z" stroke-linecap="round" />
+                </g>
+                <g transform="matrix(-0.71 0.71 -0.71 -0.71 0 0)" >
+                <path style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(244,67,54); fill-rule: nonzero; opacity: 1;" transform=" translate(-24, -24)" d="M 21.5 4.5 L 26.5 4.5 L 26.5 43.501 L 21.5 43.501 z" stroke-linecap="round" />
+                </g>
+                </g>
+                </g>
+                </svg>
+        </button>
+        </form>
+    </span>
+        <div class="flex justify-start items-center">
+            
+            <p class="text-gray-500 text-sm ">
+            <%= article.body %>
+         </p>
+           
+        </div>
+    </div>
+
+       <% }); %>
+    </div>
+   
+    
+
+
+
+
+</body>
+</html>
