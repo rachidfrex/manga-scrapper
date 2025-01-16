@@ -43,11 +43,20 @@
         <!-- Header Section -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <h1 class="text-2xl sm:text-3xl font-bold text-white font-cairo">استكشف المانجا</h1>
-            <div class="flex flex-col  sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
-                <div class="relative w-full   sm:w-[400px]">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+                <div class="relative w-full sm:w-[400px]">
                     <input type="search" 
-                           placeholder="ابحث عن مانجا..." 
-                           class="w-full pl-10 pr-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-slate-600">
+                           id="mangaSearch" 
+                           placeholder="ابحث عن مانجا أو تصنيف..." 
+                           class="w-full pl-10 pr-4 py-2 rounded-lg bg-slate-800 border border-slate-700 
+                                  text-slate-200 focus:outline-none focus:border-slate-600">
+                    <!-- Clear search button -->
+                    <button id="clearSearch" 
+                            class="absolute left-10 top-2.5 text-slate-400 hover:text-slate-300 hidden">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
                     <svg class="w-5 h-5 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
@@ -63,6 +72,9 @@
                 </a>
             </div>
         </div>
+
+        <!-- Add filter tags container after search input -->
+        <div id="filterTags" class="flex flex-wrap gap-2 mt-4 mb-2"></div>
 
         <!-- Add this after the header section -->
         <% if (message && message.includes('deleted')) { %>
@@ -86,6 +98,18 @@
                 }, 3000);
             </script>
         <% } %>
+
+        <!-- Add this right before the manga grid -->
+        <div id="noSearchResults" class="hidden text-center py-12">
+            <div class="w-16 h-16 bg-slate-800 rounded-full mx-auto flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h3 class="text-white text-xl font-semibold mb-2">لم يتم العثور على نتائج</h3>
+            <p class="text-slate-400">جرب البحث باسم آخر</p>
+        </div>
 
         <!-- Manga Grid -->
         <div class="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
@@ -143,5 +167,110 @@
             </div>
         <% } %>
     </div>
+
+    <!-- Add this script at the bottom of the body -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('mangaSearch');
+            const clearButton = document.getElementById('clearSearch');
+            const filterTags = document.getElementById('filterTags');
+            const mangaCards = document.querySelectorAll('.grid > a');
+            const noResults = document.getElementById('noSearchResults');
+            const gridContainer = document.querySelector('.grid');
+            
+            let activeFilters = new Set();
+
+            function updateSearch() {
+                const searchTerm = searchInput.value.toLowerCase();
+                let hasResults = false;
+                clearButton.style.display = searchTerm ? 'block' : 'none';
+
+                mangaCards.forEach(card => {
+                    const title = card.querySelector('h2').textContent.toLowerCase();
+                    const genres = Array.from(card.querySelectorAll('.bg-slate-700')).map(g => g.textContent.toLowerCase());
+                    
+                    // Check if card matches search term and all active filters
+                    const matchesSearch = title.includes(searchTerm) || 
+                                        genres.some(g => g.includes(searchTerm));
+                    const matchesFilters = activeFilters.size === 0 || 
+                                         genres.some(g => activeFilters.has(g));
+
+                    if (matchesSearch && matchesFilters) {
+                        card.style.display = 'block';
+                        hasResults = true;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                // Toggle no results message
+                noResults.style.display = hasResults ? 'none' : 'block';
+                gridContainer.style.display = hasResults ? 'grid' : 'none';
+
+                // Update URL with search params
+                const url = new URL(window.location);
+                if (searchTerm) {
+                    url.searchParams.set('search', searchTerm);
+                } else {
+                    url.searchParams.delete('search');
+                }
+                window.history.replaceState({}, '', url);
+            }
+
+            function toggleGenreFilter(genre) {
+                const normalizedGenre = genre.toLowerCase();
+                if (activeFilters.has(normalizedGenre)) {
+                    activeFilters.delete(normalizedGenre);
+                } else {
+                    activeFilters.add(normalizedGenre);
+                }
+                updateFilterTags();
+                updateSearch();
+            }
+
+            function updateFilterTags() {
+                filterTags.innerHTML = Array.from(activeFilters).map(genre => `
+                    <button onclick="toggleGenreFilter('${genre}')"
+                            class="px-2 py-1 bg-blue-600 text-white rounded-full text-sm flex items-center gap-1 hover:bg-blue-700">
+                        ${genre}
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                `).join('');
+            }
+
+            // Event listeners
+            searchInput.addEventListener('input', updateSearch);
+            
+            clearButton.addEventListener('click', () => {
+                searchInput.value = '';
+                activeFilters.clear();
+                updateFilterTags();
+                updateSearch();
+            });
+
+            // Make toggleGenreFilter available globally
+            window.toggleGenreFilter = toggleGenreFilter;
+
+            // Initialize search from URL params
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialSearch = urlParams.get('search');
+            if (initialSearch) {
+                searchInput.value = initialSearch;
+                updateSearch();
+            }
+
+            // Add click handlers to genre tags
+            document.querySelectorAll('.bg-slate-700').forEach(genre => {
+                genre.style.cursor = 'pointer';
+                genre.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleGenreFilter(genre.textContent.toLowerCase());
+                });
+            });
+        });
+    </script>
 </body>
 </html>

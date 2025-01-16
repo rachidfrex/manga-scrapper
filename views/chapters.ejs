@@ -89,11 +89,26 @@
         }
     </script>
 </head>
-<body class="bg-slate-900">
+<body class="bg-slate-900 relative">
+    <!-- Add Home Button -->
+    <div class="fixed top-4 left-6 z-50">
+        <a href="/mangas" 
+           class="flex items-center gap-2 px-4 py-2 bg-slate-800 rounded-lg 
+                  text-white hover:bg-slate-700 transition-colors shadow-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            <span>الرئيسية</span>
+        </a>
+    </div>
+
     <!-- Hero Section with Manga Details -->
+ 
     <div class="relative min-h-[60vh] bg-slate-950">
+        
         <!-- Background Image with Overlay -->
-        <div class="absolute inset-0 z-0">
+        <div class="absolute   inset-0 z-0">
             <img src="<%= manga.poster %>" alt="" class="w-full h-full object-cover opacity-20">
             <div class="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
         </div>
@@ -110,7 +125,7 @@
                 <!-- Manga Details -->
                 <div class="flex-grow text-white">
                     <h1 class="text-4xl font-bold mb-4"><%= manga.title %></h1>
-                    <div class="flex gap-2 mb-4">
+                    <div class="flex flex-wrap gap-2 mb-4">
                         <% manga.genres.forEach(genre => { %>
                             <span class="px-3 py-1 bg-slate-800 rounded-full text-sm">
                                 <%= genre %>
@@ -187,6 +202,7 @@
                 <!-- Update Button -->
                 <button onclick="checkForUpdates()" 
                         id="updateButton"
+                        
                         class="flex items-center gap-2 px-3 py-1.5 bg-slate-800 rounded-lg 
                                text-slate-300 hover:bg-slate-700 transition-colors">
                     <svg id="update-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لم يتم العثور على المانجا</title>
+    <link href="/css/output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-900">
+    <div class="min-h-screen py-12">
+        <div class="container mx-auto px-4">
+            <div class="max-w-2xl mx-auto">
+                <!-- Error Message -->
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-slate-800 rounded-full mx-auto flex items-center justify-center mb-4">
+                        <svg class="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-2xl font-bold text-white mb-2">لم يتم العثور على المانجا</h1>
+                    <p class="text-slate-400">لم نتمكن من العثور على "<%= searchTerm %>"</p>
+                </div>
+
+                <% if (similarResults && similarResults.length > 0) { %>
+                    <!-- Similar Results -->
+                    <div class="bg-slate-800 rounded-lg p-6">
+                        <h2 class="text-xl font-semibold text-white mb-4">هل تقصد:</h2>
+                        <div class="space-y-4">
+                            <% similarResults.forEach(manga => { %>
+                                <div class="bg-slate-700 rounded-lg p-4 flex gap-4">
+                                    <img src="<%= manga.poster %>" alt="<%= manga.title %>" 
+                                         class="w-24 h-32 object-cover rounded">
+                                    <div class="flex-1">
+                                        <h3 class="text-white font-semibold mb-2"><%= manga.title %></h3>
+                                        <div class="flex flex-wrap gap-1 mb-2">
+                                            <% manga.genres.forEach(genre => { %>
+                                                <span class="text-xs bg-slate-600 px-2 py-0.5 rounded text-slate-300">
+                                                    <%= genre %>
+                                                </span>
+                                            <% }) %>
+                                        </div>
+                                        <div class="text-sm text-slate-400 mb-2">
+                                            <%= manga.state %>
+                                            <% if (manga.latestChapter) { %>
+                                                • <%= manga.latestChapter %>
+                                            <% } %>
+                                        </div>
+                                        <a href="/add-manga?name=<%= encodeURIComponent(manga.title) %>" 
+                                           class="inline-block text-sm bg-blue-600 px-3 py-1 rounded hover:bg-blue-700 text-white">
+                                            إضافة هذه المانجا
+                                        </a>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
+                <% } %>
+
+                <div class="text-center mt-8">
+                    <a href="/mangas" class="text-blue-400 hover:text-blue-300">العودة إلى قائمة المانجا</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

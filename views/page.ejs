@@ -40,11 +40,13 @@
         .mobile-nav-buttons {
             position: fixed;
             bottom: 24px;
-            left: 24px;
+            left: 50%;
+            transform: translateX(-50%);
             display: none;
             flex-direction: row;
             gap: 12px;
             z-index: 100;
+            align-items: center;
         }
         
         .nav-button {
@@ -55,10 +57,25 @@
             backdrop-filter: blur(8px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .nav-button:active {
             transform: scale(0.95);
+        }
+
+        /* Add styles for mobile chapter selector */
+        .chapter-select-mobile {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            width: 120px;
+            text-align: center;
         }
         
         @media (max-width: 768px) {
@@ -172,7 +189,7 @@
                         </svg>
                     </a>
                     <div>
-                        <h1 class="text-white font-semibold"><%= manga.title %></h1>
+                        <h1 class="text-white font-semibold mb-1"><%= manga.title %></h1>
                         <p class="text-sm text-slate-400">الفصل <%= chapter.chapterNumber %></p>
                     </div>
                 </div>
@@ -183,23 +200,23 @@
                         <% if (prevChapter) { %>
                             <a href="/manga/<%= manga.slug %>/chapter/<%= prevChapter._id %>" 
                                class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">
-                                السابق
+                                الفصل <%= prevChapter.chapterNumber %>
                             </a>
                         <% } %>
                         <select onchange="window.location.href=this.value" 
                                 class="bg-slate-800 text-slate-200 rounded-lg px-3 py-1.5 text-sm border border-slate-700 
-                                       focus:outline-none focus:border-slate-600 w-[100px]">
-                            <% manga.chapters.forEach(chap => { %>
+                                       focus:outline-none focus:border-slate-600 min-w-[120px]">
+                            <% manga.chapters.sort((a, b) => b.chapterNumber - a.chapterNumber).forEach(chap => { %>
                                 <option value="/manga/<%= manga.slug %>/chapter/<%= chap._id %>" 
                                         <%= chap._id.toString() === chapter._id.toString() ? 'selected' : '' %>>
-                                        <%= chap.chapterNumber %>   الفصل 
+                                        الفصل <%= chap.chapterNumber %>
                                 </option>
                             <% }) %>
                         </select>
                         <% if (nextChapter) { %>
                             <a href="/manga/<%= manga.slug %>/chapter/<%= nextChapter._id %>" 
                                class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">
-                                التالي
+                                الفصل <%= nextChapter.chapterNumber %>
                             </a>
                         <% } %>
                     </div>
@@ -214,16 +231,28 @@
             <a href="/manga/<%= manga.slug %>/chapter/<%= prevChapter._id %>" 
                class="nav-button flex items-center justify-center">
                <svg class="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
             
             </a>
         <% } %>
+
+        <!-- Add mobile chapter selector -->
+        <select onchange="window.location.href=this.value" 
+                class="chapter-select-mobile">
+            <% manga.chapters.sort((a, b) => b.chapterNumber - a.chapterNumber).forEach(chap => { %>
+                <option value="/manga/<%= manga.slug %>/chapter/<%= chap._id %>" 
+                        <%= chap._id.toString() === chapter._id.toString() ? 'selected' : '' %>>
+                        الفصل <%= chap.chapterNumber %>
+                </option>
+            <% }) %>
+        </select>
+
         <% if (nextChapter) { %>
             <a href="/manga/<%= manga.slug %>/chapter/<%= nextChapter._id %>" 
                class="nav-button flex items-center justify-center">
                <svg class="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                </svg>
             </a>
         <% } %>

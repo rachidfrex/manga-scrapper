@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Manga = require('./models/Manga');
 const Chapter = require('./models/Chapter');
-const { scrapeMangaAndChapters, searchManga, checkMangaUpdates, checkMangaUrl } = require('./puppeteer');
+const { scrapeMangaAndChapters, searchManga, checkMangaUpdates, findSimilarManga } = require('./puppeteer');
 const app = express();
 app.use(express.static('public'));
 
@@ -67,8 +67,13 @@ app.get('/manga/:slug', async (req, res) => {
             options: { sort: { 'chapterNumber': -1 } }
         });
         
-        if(!manga){
-            return res.status(404).send('No manga found');
+        if (!manga) {
+            // Try to find similar manga names
+            const similarResults = await findSimilarManga(req.params.slug.replace(/-/g, ' '));
+            return res.render('notFound.ejs', { 
+                searchTerm: req.params.slug.replace(/-/g, ' '),
+                similarResults: similarResults.slice(0, 5) // Show top 5 similar results
+            });
         }
         res.render('chapters.ejs', { manga });
     } catch (error) {
@@ -180,6 +185,20 @@ app.post('/add-manga', async (req, res) => {
                 }
             });
         } catch (scrapeError) {
+            if (scrapeError.message === 'manga_not_found') {
+                // Return search results immediately
+                return res.status(404).json({ 
+                    success: false, 
+                    message: 'لم يتم العثور على المانجا المطلوبة',
+                    searchResults: scrapeError.searchResults || []
+                });
+            }
+            if (scrapeError.message === 'timeout_error') {
+                return res.status(504).json({
+                    success: false,
+                    message: scrapeError.details || 'استغرقت العملية وقتاً طويلاً'
+                });
+            }
             if (scrapeError.message === 'manga_exists') {
                 return res.status(409).json({
                     success: false,
@@ -188,12 +207,10 @@ app.post('/add-manga', async (req, res) => {
                     searchResults: scrapeError.searchResults
                 });
             }
-            if (scrapeError.message === 'manga_not_found') {
-                const searchResults = await searchManga(mangaName);
-                return res.status(404).json({ 
-                    success: false, 
-                    message: 'لم يتم العثور على المانجا المطلوبة',
-                    searchResults
+            if (scrapeError.message === 'network_error') {
+                return res.status(503).json({
+                    success: false,
+                    message: scrapeError.details || 'فشل الاتصال بالموقع'
                 });
             }
             throw scrapeError;
@@ -247,16 +264,6 @@ app.delete('/manga/:slug', async (req, res) => {
             success: false, 
             message: 'فشل في حذف المانجا' 
         });
-    }
-});
-
-// Add diagnostic endpoint
-app.get('/check-manga/:name', async (req, res) => {
-    try {
-        const result = await checkMangaUrl(req.params.name);
-        res.json(result);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
     }
 });
 
