@@ -85,23 +85,29 @@ app.get('/manga/:slug', async (req, res) => {
 // get chapter pages
 app.get('/manga/:slug/chapter/:chapterId', async (req, res) => {
     try {
-        const manga = await Manga.findBySlug(req.params.slug);
+        const manga = await Manga.findBySlug(req.params.slug).populate({
+            path: 'chapters',
+            options: { sort: { chapterNumber: -1 } }
+        });
         const chapter = await Chapter.findById(req.params.chapterId);
         
         if (!manga || !chapter) {
             return res.status(404).send('Not found');
         }
 
-        // Get previous and next chapters
+        // Ensure chapters are properly loaded
         const chapters = await Chapter.find({ mangaId: manga._id })
-            .sort({ chapterNumber: 1 });
+            .sort({ chapterNumber: -1 });
         
         const currentIndex = chapters.findIndex(c => c._id.toString() === chapter._id.toString());
-        const prevChapter = currentIndex > 0 ? chapters[currentIndex - 1] : null;
-        const nextChapter = currentIndex < chapters.length - 1 ? chapters[currentIndex + 1] : null;
+        const prevChapter = currentIndex < chapters.length - 1 ? chapters[currentIndex + 1] : null;
+        const nextChapter = currentIndex > 0 ? chapters[currentIndex - 1] : null;
 
         res.render('page.ejs', { 
-            manga, 
+            manga: {
+                ...manga.toObject(),
+                chapters: chapters // Use the properly sorted chapters
+            }, 
             chapter,
             prevChapter,
             nextChapter

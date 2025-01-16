@@ -86,6 +86,28 @@
                 display: none;
             }
         }
+
+        /* Update chapter select mobile styles */
+        .chapter-select-mobile {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            width: auto;
+            min-width: 140px;
+            font-size: 14px;
+            text-align: center;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .chapter-select-mobile option {
+            background: #1e293b;
+            color: white;
+            padding: 8px;
+        }
     </style>
     <script>
         function searchPages() {
@@ -203,16 +225,32 @@
                                 الفصل <%= prevChapter.chapterNumber %>
                             </a>
                         <% } %>
+                        
+                        <!-- Updated Chapter Selector -->
                         <select onchange="window.location.href=this.value" 
                                 class="bg-slate-800 text-slate-200 rounded-lg px-3 py-1.5 text-sm border border-slate-700 
                                        focus:outline-none focus:border-slate-600 min-w-[120px]">
-                            <% manga.chapters.sort((a, b) => b.chapterNumber - a.chapterNumber).forEach(chap => { %>
+                            <% 
+                            // Ensure chapters are populated and sorted
+                            const sortedChapters = [...manga.chapters].sort((a, b) => 
+                                parseInt(b.chapterNumber) - parseInt(a.chapterNumber)
+                            );
+
+                            sortedChapters.forEach(chap => { 
+                                // Ensure chapterNumber exists and is converted to number
+                                const chapterNum = parseInt(chap.chapterNumber);
+                                if (!isNaN(chapterNum)) {
+                            %>
                                 <option value="/manga/<%= manga.slug %>/chapter/<%= chap._id %>" 
                                         <%= chap._id.toString() === chapter._id.toString() ? 'selected' : '' %>>
-                                        الفصل <%= chap.chapterNumber %>
+                                    الفصل <%= chapterNum %>
                                 </option>
-                            <% }) %>
+                            <% 
+                                }
+                            }); 
+                            %>
                         </select>
+
                         <% if (nextChapter) { %>
                             <a href="/manga/<%= manga.slug %>/chapter/<%= nextChapter._id %>" 
                                class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">
@@ -239,13 +277,20 @@
 
         <!-- Add mobile chapter selector -->
         <select onchange="window.location.href=this.value" 
-                class="chapter-select-mobile">
-            <% manga.chapters.sort((a, b) => b.chapterNumber - a.chapterNumber).forEach(chap => { %>
+                class="chapter-select-mobile min-w-[140px] text-center">
+            <% 
+            sortedChapters.forEach(chap => { 
+                const chapterNum = parseInt(chap.chapterNumber);
+                if (!isNaN(chapterNum)) {
+            %>
                 <option value="/manga/<%= manga.slug %>/chapter/<%= chap._id %>" 
                         <%= chap._id.toString() === chapter._id.toString() ? 'selected' : '' %>>
-                        الفصل <%= chap.chapterNumber %>
+                        الفصل <%= chapterNum %>
                 </option>
-            <% }) %>
+            <% 
+                }
+            }); 
+            %>
         </select>
 
         <% if (nextChapter) { %>
