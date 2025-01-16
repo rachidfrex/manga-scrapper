@@ -1,4 +1,5 @@
 const express = require('express');
+require('dotenv').config();
 const mongoose = require('mongoose');
 const Manga = require('./models/Manga');
 const Chapter = require('./models/Chapter');
@@ -15,13 +16,18 @@ app.use(express.json());
 //     console.log(err);
 // }
 // )
-mongoose.connect(process.env.MONGODB_URI || "mongodb+srv://rachid7518:qg5Y3eDQJG2hbHF@cluster0.ikmiq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-.then(() => {
-  console.log('Connected to the database');
-})
-.catch((err) => {
-  console.log(err);
-});
+mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  })
+  .then(() => {
+    console.log('Connected to the database');
+  })
+  .catch((err) => {
+    console.log('MongoDB connection error:', err);
+  });
 
 // Maintain active connections
 const clients = new Map();
