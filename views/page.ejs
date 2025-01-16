@@ -35,6 +35,40 @@
         .page-loaded {
             opacity: 1;
         }
+
+        /* Mobile Navigation Buttons */
+        .mobile-nav-buttons {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            display: none;
+            flex-direction: row;
+            gap: 12px;
+            z-index: 100;
+        }
+        
+        .nav-button {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+        }
+        
+        .nav-button:active {
+            transform: scale(0.95);
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-nav-buttons {
+                display: flex;
+            }
+            .desktop-nav {
+                display: none;
+            }
+        }
     </style>
     <script>
         function searchPages() {
@@ -143,21 +177,8 @@
                     </div>
                 </div>
 
-                <!-- Page Navigation -->
-                <div class="flex items-center gap-4">
-                    <!-- Page Search -->
-                    <div class="relative">
-                        <input type="number" 
-                               id="pageSearch"
-                               placeholder="رقم الصفحة..." 
-                               min="1"
-                               max="<%= chapter.pages.length %>"
-                               class="w-24 pl-3 pr-3 py-1 rounded-lg bg-slate-800 border border-slate-700 
-                                      text-slate-200 focus:outline-none focus:border-slate-600"
-                               onkeyup="if(event.key === 'Enter') searchPages()">
-                    </div>
-
-                    <!-- Chapter Navigation -->
+                <!-- Desktop Navigation -->
+                <div class="desktop-nav flex items-center gap-4">
                     <div class="flex items-center gap-2">
                         <% if (prevChapter) { %>
                             <a href="/manga/<%= manga.slug %>/chapter/<%= prevChapter._id %>" 
@@ -165,6 +186,16 @@
                                 السابق
                             </a>
                         <% } %>
+                        <select onchange="window.location.href=this.value" 
+                                class="bg-slate-800 text-slate-200 rounded-lg px-3 py-1.5 text-sm border border-slate-700 
+                                       focus:outline-none focus:border-slate-600 w-[100px]">
+                            <% manga.chapters.forEach(chap => { %>
+                                <option value="/manga/<%= manga.slug %>/chapter/<%= chap._id %>" 
+                                        <%= chap._id.toString() === chapter._id.toString() ? 'selected' : '' %>>
+                                        <%= chap.chapterNumber %>   الفصل 
+                                </option>
+                            <% }) %>
+                        </select>
                         <% if (nextChapter) { %>
                             <a href="/manga/<%= manga.slug %>/chapter/<%= nextChapter._id %>" 
                                class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">
@@ -176,6 +207,27 @@
             </div>
         </div>
     </header>
+
+    <!-- Mobile Navigation Buttons -->
+    <div class="mobile-nav-buttons">
+        <% if (prevChapter) { %>
+            <a href="/manga/<%= manga.slug %>/chapter/<%= prevChapter._id %>" 
+               class="nav-button flex items-center justify-center">
+               <svg class="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            
+            </a>
+        <% } %>
+        <% if (nextChapter) { %>
+            <a href="/manga/<%= manga.slug %>/chapter/<%= nextChapter._id %>" 
+               class="nav-button flex items-center justify-center">
+               <svg class="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+               </svg>
+            </a>
+        <% } %>
+    </div>
 
     <!-- Pages Container -->
     <div class="page-viewer container mx-auto px-4 pt-20 pb-8">

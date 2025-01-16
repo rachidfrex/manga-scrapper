@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Manga = require('./models/Manga');
 const Chapter = require('./models/Chapter');
-const { scrapeMangaAndChapters, searchManga, checkMangaUrl } = require('./puppeteer');
+const { scrapeMangaAndChapters, searchManga, checkMangaUpdates, checkMangaUrl } = require('./puppeteer');
 const app = express();
 app.use(express.static('public'));
 
@@ -18,6 +18,28 @@ mongoose.connect("mongodb+srv://rachid7518:qg5Y3eDQJG2hbHF@cluster0.ikmiq.mongod
 
 // Maintain active connections
 const clients = new Map();
+app.get('/', (req, res) => {
+    res.redirect('/mangas');
+}
+);
+
+
+// Add to your Express routes
+app.post('/manga/:slug/check-updates', async (req, res) => {
+    try {
+        const { slug } = req.params;
+        const result = await checkMangaUpdates(slug);
+        res.json(result);
+    } catch (error) {
+        console.error('Update check error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'فشل في التحقق من التحديثات',
+            error: error.message 
+        });
+    }
+});
+
 
 // Update the mangas route to handle success message
 app.get('/mangas', async (req, res) => {
@@ -238,6 +260,6 @@ app.get('/check-manga/:name', async (req, res) => {
     }
 });
 
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
+app.listen(3000, '192.168.1.34', () => {
+    console.log('Server is running http://192.168.1.34:3000');
 });

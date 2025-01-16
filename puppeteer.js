@@ -268,8 +268,93 @@ async function scrapeMangaAndChapters(mangaName, progressCallback) {
     }
 }
 
+async function checkMangaUpdates(mangaSlug) {
+    let browser;
+    try {
+        browser = await puppeteer.launch({
+            headless: "new",
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+
+        const page = await browser.newPage();
+        await page.setRequestInterception(true);
+        page.on('request', request => {
+            if (['image', 'stylesheet', 'font'].includes(request.resourceType())) {
+                request.abort();
+            } else {
+                request.continue();
+            }
+        });
+
+        const formattedName = mangaSlug.replace(/-\d+$/, ''); // Remove any timestamp suffix
+        const url = `https://like-manga.net/manga/${formattedName}`;
+        
+        await page.goto(url, { waitUntil: 'networkidle0' });
+
+        const newChapters = await page.evaluate(() => {
+            return Array.from(document.querySelectorAll('.wp-manga-chapter a'))
+                .map(a => ({
+                    number: parseInt(a.innerText.match(/\d+/)?.[0] || '0'),
+                    url: a.href
+                }))
+                .filter(chapter => chapter.number > 0)
+                .reverse();
+        });
+
+        const manga = await Manga.findOne({ slug: mangaSlug }).populate('chapters');
+        const existingChapterNumbers = manga.chapters.map(ch => ch.chapterNumber);
+        const newChaptersList = newChapters.filter(ch => !existingChapterNumbers.includes(ch.number));
+
+        if (newChaptersList.length > 0) {
+            for (const chapter of newChaptersList) {
+                const chapterPage = await browser.newPage();
+                await chapterPage.setRequestInterception(true);
+                chapterPage.on('request', request => {
+                    if (!['document', 'script'].includes(request.resourceType())) {
+                        request.abort();
+                    } else {
+                        request.continue();
+                    }
+                });
+
+                await chapterPage.goto(chapter.url, { waitUntil: 'networkidle0' });
+                const chapterPages = await chapterPage.evaluate(() => {
+                    return Array.from(document.querySelectorAll('.wp-manga-chapter-img'))
+                        .map((img, index) => ({
+                            pageNumber: index + 1,
+                            imageUrl: img.src
+                        }))
+                        .filter(page => page.imageUrl?.startsWith('http'));
+                });
+
+                if (chapterPages.length > 0) {
+                    const newChapter = new Chapter({
+                        mangaId: manga._id,
+                        chapterNumber: chapter.number,
+                        title: `Chapter ${chapter.number}`,
+                        pages: chapterPages
+                    });
+                    await newChapter.save();
+                    manga.chapters.push(newChapter._id);
+                }
+
+                await chapterPage.close();
+            }
+
+            await manga.save();
+            return { updatesFound: true, newChaptersCount: newChaptersList.length };
+        }
+
+        return { updatesFound: false, newChaptersCount: 0 };
+
+    } finally {
+        if (browser) await browser.close();
+    }
+}
+
 module.exports = {
     scrapeMangaAndChapters,
-    searchManga
+    searchManga,
+    checkMangaUpdates  // Export the new function
 };
 

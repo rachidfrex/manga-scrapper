@@ -39,28 +39,28 @@
     <!-- Decorative Header Background -->
     <div class="absolute top-0 left-0 w-full h-64 bg-gradient-to-r from-slate-900 to-slate-950 -skew-y-6 transform origin-top-left -z-10"></div>
 
-    <div class="container mx-auto px-4 py-12">
+    <div class="container mx-auto px-4 py-8 sm:py-12">
         <!-- Header Section -->
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-white font-cairo">استكشف المانجا</h1>
-            <div class="flex items-center gap-4">
-                <a href="/add-manga" 
-                   class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg 
-                          hover:bg-blue-700 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                              d="M12 4v16m8-8H4"/>
-                    </svg>
-                    <span>إضافة مانجا</span>
-                </a>
-                <div class="relative">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <h1 class="text-2xl sm:text-3xl font-bold text-white font-cairo">استكشف المانجا</h1>
+            <div class="flex flex-col  sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+                <div class="relative w-full   sm:w-[400px]">
                     <input type="search" 
                            placeholder="ابحث عن مانجا..." 
-                           class="w-64 pl-10 pr-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-slate-600">
+                           class="w-full pl-10 pr-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-slate-600">
                     <svg class="w-5 h-5 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                 </div>
+                <a href="/add-manga" 
+                   class="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg 
+                          hover:bg-blue-700 transition-colors w-full sm:w-auto">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span class="">إضافة مانجا</span>
+                </a>
             </div>
         </div>
 
@@ -88,7 +88,7 @@
         <% } %>
 
         <!-- Manga Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div class="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
             <% mangas.forEach(manga => { %>
                 <a href="/manga/<%= manga.slug %>" class="group">
                     <div class="bg-slate-800 rounded-lg overflow-hidden transition-transform duration-300 hover:-translate-y-1">
@@ -113,13 +113,13 @@
                         </div>
                         
                         <div class="p-2 space-y-1">
-                            <h2 class="text-sm font-bold w-full text-left text-slate-200 line-clamp-1 font-cairo">
+                            <h2 class="text-xs sm:text-sm font-bold w-full text-left text-slate-200 line-clamp-1 font-cairo">
                                 <%= manga.title %>
                             </h2>
                             
-                            <div class="flex flex-wrap gap-1 justify-end">
-                                <% manga.genres.slice(0, 2).forEach(genre => { %>
-                                    <span class="px-2 py-0.5 text-[10px] rounded bg-slate-700 text-slate-300 font-cairo">
+                            <div class="flex flex-wrap gap-1 text-xs  justify-end">
+                                <% manga.genres.slice(0, 3).forEach(genre => { %>
+                                    <span class="px-2 sm:px-2 py-0.5 text-[9px] sm:text-[10px] rounded bg-slate-700 text-slate-300 font-cairo">
                                         <%= genre %>
                                     </span>
                                 <% }) %>
