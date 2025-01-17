@@ -16,14 +16,20 @@ app.use(express.json());
 //     console.log(err);
 // }
 // )
+// mongoose.connect(process.env.MONGODB_URI, {
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true,
+//     serverSelectionTimeoutMS: 30000, // Increase timeout
+//     socketTimeoutMS: 45000,
+//     maxPoolSize: 10,
+//     retryWrites: true,
+//     w: 'majority'
+//   })
 mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 30000, // Increase timeout
+    serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
-    maxPoolSize: 10,
-    retryWrites: true,
-    w: 'majority'
   })
   .then(() => {
     console.log('Connected to the database');
