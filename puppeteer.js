@@ -416,7 +416,7 @@ async function findSimilarManga(searchTerm) {
                 request.continue();
             }
         });
-
+   
         // Search using partial match
         await page.goto(`https://like-manga.net/?s=${encodeURIComponent(searchTerm)}&post_type=wp-manga`, {
             waitUntil: 'networkidle0'
